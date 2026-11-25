@@ -1,8 +1,14 @@
-// Palco 3D do assistente: um cenário feito só com formas simples, que recolore e liga/desliga peças.
+// Palco 3D do assistente: câmera que gira ao redor do cenário, luz com sombras e controles.
 import { temaPorId, fotoUrl } from './dados.js';
+import { criarModelos } from './estudio-modelos.js';
 
-const CHAVES = ['arco', 'redondo', 'cilindros', 'baloes', 'neon', 'tapete'];
-const FOTO_FALLBACK_LARGURA = 960;
+const FOV = 34;
+const ALVO_Y = 1.8;
+const MEIA_LARGURA = 3.4;
+const VISTA = Object.freeze({ giro: 0, altura: 0.14, zoom: 1 });
+const PASSO_GIRO = Math.PI / 4;
+const PAUSA_APOS_TOQUE = 4;
+const limitar = (v, min, max) => Math.min(max, Math.max(min, v));
 
 function temWebgl() {
   try {
@@ -17,213 +23,198 @@ function temWebgl() {
 export function iniciarEstudioEstatico({ canvas, imagem }) {
   canvas.hidden = true;
   imagem.hidden = false;
+  document.getElementById('palco-controles')?.setAttribute('hidden', '');
+  document.getElementById('palco-dica')?.setAttribute('hidden', '');
   const mostrar = (id) => {
     const tema = temaPorId(id);
-    imagem.src = fotoUrl(tema.capa, FOTO_FALLBACK_LARGURA);
+    imagem.src = fotoUrl(tema.capa, 960);
     imagem.alt = `Exemplo de cenário no tema ${tema.nome}`;
   };
   document.addEventListener('tema:mudou', ({ detail }) => mostrar(detail.tema.id));
   mostrar(document.documentElement.dataset.tema || 'padrao');
 }
 
+/** Estado do giro: arrastar (com inércia), passos por botão/teclado e balanço automático. */
+function criarOrbita() {
+  const o = { ...VISTA, destino: null, velocidade: 0, auto: true, arrastando: false, parado: 99, fase: 0 };
+  return {
+    estado: o,
+    interagir() { o.parado = 0; },
+    girar(delta) {
+      o.destino = (o.destino ?? o.giro) + delta;
+      o.velocidade = 0;
+      o.parado = 0;
+    },
+    aproximar(delta) { o.zoom = limitar(o.zoom + delta, 0.62, 1.3); },
+    inclinar(delta) { o.altura = limitar(o.altura + delta, -0.04, 0.6); o.parado = 0; },
+    reiniciar() {
+      o.giro = Math.atan2(Math.sin(o.giro), Math.cos(o.giro));
+      Object.assign(o, { destino: 0, velocidade: 0, altura: VISTA.altura, zoom: VISTA.zoom, auto: true, parado: PAUSA_APOS_TOQUE - 1.5, fase: 0 });
+    },
+    atualizar(dt) {
+      if (o.arrastando) return;
+      o.parado += dt;
+      if (o.destino !== null) {
+        o.giro += (o.destino - o.giro) * Math.min(1, dt * 6);
+        if (Math.abs(o.destino - o.giro) < 0.004) o.destino = null;
+        return;
+      }
+      o.giro += o.velocidade * dt;
+      o.velocidade *= Math.exp(-dt * 2.4);
+      if (!o.auto || o.parado < PAUSA_APOS_TOQUE || Math.abs(o.velocidade) > 0.05) return;
+      // volta pelo caminho mais curto e balança de um lado ao outro, sem mostrar as costas do cenário
+      o.giro = Math.atan2(Math.sin(o.giro), Math.cos(o.giro));
+      o.fase += dt;
+      const alvo = Math.sin(o.fase * 0.42) * 0.62;
+      o.giro += (alvo - o.giro) * Math.min(1, dt * 1.4);
+      o.altura += (VISTA.altura - o.altura) * Math.min(1, dt);
+    },
+  };
+}
+
+function ligarControles({ canvas, palco, orbita }) {
+  const o = orbita.estado;
+  const dica = palco.querySelector('#palco-dica');
+  const botoes = palco.querySelector('#palco-controles');
+  const botaoAuto = botoes?.querySelector('[data-cena="auto"]');
+  const tocou = () => { orbita.interagir(); dica?.classList.add('some'); };
+  let ultimo = null;
+
+  canvas.addEventListener('pointerdown', (e) => {
+    o.arrastando = true;
+    o.destino = null;
+    o.velocidade = 0;
+    ultimo = { x: e.clientX, y: e.clientY, t: performance.now() };
+    canvas.setPointerCapture?.(e.pointerId);
+    tocou();
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!o.arrastando || !ultimo) return;
+    const agora = performance.now();
+    const passo = -(e.clientX - ultimo.x) * 0.008;
+    o.giro += passo;
+    o.velocidade = limitar(passo / Math.max(0.016, (agora - ultimo.t) / 1000), -7, 7);
+    if (e.pointerType === 'mouse') orbita.inclinar((e.clientY - ultimo.y) * 0.004);
+    ultimo = { x: e.clientX, y: e.clientY, t: agora };
+  });
+  const soltar = () => {
+    if (ultimo && performance.now() - ultimo.t > 120) o.velocidade = 0;
+    o.arrastando = false;
+    ultimo = null;
+    orbita.interagir();
+  };
+  canvas.addEventListener('pointerup', soltar);
+  canvas.addEventListener('pointercancel', soltar);
+  canvas.addEventListener('dblclick', () => orbita.reiniciar());
+
+  const mostrarAuto = () => {
+    botaoAuto?.setAttribute('aria-pressed', String(o.auto));
+    botaoAuto?.querySelector('use')?.setAttribute('href', o.auto ? '#i-pause' : '#i-play');
+  };
+  const acoes = {
+    esq: () => orbita.girar(-PASSO_GIRO),
+    dir: () => orbita.girar(PASSO_GIRO),
+    mais: () => orbita.aproximar(-0.12),
+    menos: () => orbita.aproximar(0.12),
+    reset: () => orbita.reiniciar(),
+    auto: () => { o.auto = !o.auto; o.parado = PAUSA_APOS_TOQUE; o.velocidade = 0; o.destino = null; },
+  };
+  botoes?.addEventListener('click', (e) => {
+    const nome = e.target.closest('[data-cena]')?.dataset.cena;
+    if (!acoes[nome]) return;
+    acoes[nome]();
+    dica?.classList.add('some');
+    mostrarAuto();
+  });
+  const teclas = {
+    ArrowLeft: acoes.esq, ArrowRight: acoes.dir, '+': acoes.mais, '=': acoes.mais, '-': acoes.menos, Home: acoes.reset,
+    ArrowUp: () => orbita.inclinar(0.08), ArrowDown: () => orbita.inclinar(-0.08),
+  };
+  canvas.addEventListener('keydown', (e) => {
+    if (!teclas[e.key]) return;
+    e.preventDefault();
+    teclas[e.key]();
+    mostrarAuto();
+  });
+}
+
+function montarLuzes(THREE, cena, comSombra) {
+  const principal = new THREE.DirectionalLight(0xffffff, 1.7);
+  principal.position.set(3.5, 7.5, 6);
+  principal.castShadow = comSombra;
+  principal.shadow.mapSize.set(1024, 1024);
+  Object.assign(principal.shadow.camera, { left: -5, right: 5, top: 6, bottom: -3, near: 1, far: 22 });
+  principal.shadow.bias = -0.0004;
+  principal.shadow.normalBias = 0.025;
+  principal.shadow.radius = 5;
+  const preenchimento = new THREE.DirectionalLight(0xffe4f0, 0.5);
+  preenchimento.position.set(-6, 3, 3);
+  cena.add(principal, preenchimento, new THREE.HemisphereLight(0xffffff, 0xf3d3e0, 0.45));
+  const piso = new THREE.Mesh(new THREE.CircleGeometry(8, 64), new THREE.ShadowMaterial({ opacity: 0.2 }));
+  piso.rotation.x = -Math.PI / 2;
+  piso.receiveShadow = true;
+  cena.add(piso);
+}
+
 export async function iniciarEstudio({ canvas, palco, inicial }) {
   if (!temWebgl()) throw new Error('sem-webgl');
   const THREE = await import('three');
   const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js');
+  const movel = window.matchMedia('(max-width: 768px)').matches;
 
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, movel ? 1.6 : 2));
+  renderer.shadowMap.enabled = !movel;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
   const cena = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 60);
-  camera.position.set(0, 2.3, 10.8);
-  camera.lookAt(0, 1.55, 0);
   const pmrem = new THREE.PMREMGenerator(renderer);
   cena.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  const sol = new THREE.DirectionalLight(0xffffff, 1.3);
-  sol.position.set(3, 6, 5);
-  cena.add(sol, new THREE.HemisphereLight(0xffffff, 0xffe3ee, 0.7));
+  const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 80);
+  montarLuzes(THREE, cena, !movel);
+  const modelos = criarModelos(THREE);
+  cena.add(modelos.grupo);
 
-  const palcoGrupo = new THREE.Group();
-  cena.add(palcoGrupo);
+  const orbita = criarOrbita();
+  ligarControles({ canvas, palco, orbita });
+  let distanciaBase = 11;
 
-  // ----- materiais (as cores mudam com o tema) -----
-  const cor = (hex) => new THREE.Color(hex);
-  const mats = {
-    painel: new THREE.MeshStandardMaterial({ roughness: 0.65 }),
-    painel2: new THREE.MeshStandardMaterial({ roughness: 0.6 }),
-    cilindro: new THREE.MeshStandardMaterial({ roughness: 0.7 }),
-    cilindro2: new THREE.MeshStandardMaterial({ roughness: 0.7 }),
-    tapete: new THREE.MeshStandardMaterial({ roughness: 1 }),
-  };
-  const ouro = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 1, roughness: 0.25 });
-  const alvos = Object.fromEntries(Object.keys(mats).map((k) => [k, new THREE.Color()]));
-
-  const partes = {};
-  const novaParte = (chave, x, y, z) => {
-    const grupo = new THREE.Group();
-    grupo.position.set(x, y, z);
-    grupo.scale.setScalar(0.001);
-    palcoGrupo.add(grupo);
-    partes[chave] = { grupo, atual: 0, alvo: 1 };
-    return grupo;
-  };
-
-  // tapete
-  const tapete = novaParte('tapete', 0, 0.03, 0.2);
-  tapete.add(new THREE.Mesh(new THREE.CylinderGeometry(2.9, 2.9, 0.06, 56), mats.tapete));
-
-  // painel em arco
-  const forma = new THREE.Shape();
-  forma.moveTo(-1.1, 0);
-  forma.lineTo(-1.1, 2.4);
-  forma.absarc(0, 2.4, 1.1, Math.PI, 0, true);
-  forma.lineTo(1.1, 0);
-  forma.closePath();
-  const arco = novaParte('arco', -1.0, 0.06, -1.1);
-  arco.add(new THREE.Mesh(new THREE.ExtrudeGeometry(forma, { depth: 0.1, bevelEnabled: false, curveSegments: 32 }), mats.painel));
-
-  // painel redondo
-  const redondo = novaParte('redondo', 0.95, 2.35, -1.25);
-  const disco = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.25, 0.08, 56), mats.painel2);
-  disco.rotation.x = Math.PI / 2;
-  const aro = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.04, 10, 72), ouro);
-  redondo.add(disco, aro);
-
-  // cilindros (cada um é uma parte com pivô na base)
-  const cilindros = novaParte('cilindros', 0, 0.06, 0);
-  [
-    { x: -1.4, z: 0.55, r: 0.45, h: 0.8, m: 'cilindro' },
-    { x: 0, z: 0.8, r: 0.5, h: 1.25, m: 'cilindro2' },
-    { x: 1.4, z: 0.5, r: 0.42, h: 0.6, m: 'cilindro' },
-  ].forEach(({ x, z, r, h, m }) => {
-    const corpo = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 40), mats[m]);
-    corpo.position.set(x, h / 2, z);
-    const prato = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.72, r * 0.72, 0.04, 40), ouro);
-    prato.position.set(x, h + 0.03, z);
-    cilindros.add(corpo, prato);
-  });
-
-  // guirlanda de balões ao redor do arco
-  const baloes = novaParte('baloes', -1.0, 2.5, -1.0);
-  const esfera = new THREE.SphereGeometry(1, 24, 18);
-  const matBaloes = Array.from({ length: 5 }, () => new THREE.MeshPhysicalMaterial({ roughness: 0.5, clearcoat: 0.6, envMapIntensity: 0.9 }));
-  const matCromo = new THREE.MeshStandardMaterial({ metalness: 1, roughness: 0.14, envMapIntensity: 1.2 });
-  const alvosBaloes = matBaloes.map(() => new THREE.Color());
-  const alvoCromo = new THREE.Color();
-  for (let i = 0; i < 16; i += 1) {
-    const ang = THREE.MathUtils.lerp(1.12 * Math.PI, -0.12 * Math.PI, i / 15);
-    const tamanho = 0.18 + ((i * 37) % 17) / 17 * 0.17;
-    const balao = new THREE.Mesh(esfera, i % 5 === 2 ? matCromo : matBaloes[i % 5]);
-    balao.scale.set(tamanho, tamanho * 1.12, tamanho);
-    balao.position.set(Math.cos(ang) * 1.45, Math.sin(ang) * 1.15 + 0.05, ((i * 13) % 7) / 7 * 0.5 - 0.25);
-    baloes.add(balao);
+  function posicionarCamera() {
+    const { giro, altura, zoom } = orbita.estado;
+    const d = distanciaBase * zoom;
+    camera.position.set(Math.sin(giro) * Math.cos(altura) * d, ALVO_Y + Math.sin(altura) * d, Math.cos(giro) * Math.cos(altura) * d);
+    camera.lookAt(0, ALVO_Y, 0);
   }
 
-  // neon (textura de canvas num plano, para girar junto com o cenário)
-  const lona = document.createElement('canvas');
-  lona.width = 512;
-  lona.height = 512;
-  const textura = new THREE.CanvasTexture(lona);
-  textura.colorSpace = THREE.SRGBColorSpace;
-  const neon = novaParte('neon', -1.0, 1.9, -0.88);
-  neon.add(new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.2), new THREE.MeshBasicMaterial({ map: textura, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
-  let neonTexto = null;
-  let neonCor = null;
-
-  function desenharNeon(texto, brilho) {
-    if (texto === neonTexto && brilho === neonCor) return;
-    neonTexto = texto;
-    neonCor = brilho;
-    const g = lona.getContext('2d');
-    g.clearRect(0, 0, 512, 512);
-    g.lineJoin = 'round';
-    g.lineCap = 'round';
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    const tracar = (largura, estilo, desfoque) => {
-      g.shadowColor = brilho;
-      g.shadowBlur = desfoque;
-      g.strokeStyle = estilo;
-      g.lineWidth = largura;
-      if (texto) {
-        g.font = `700 ${texto.length > 2 ? 190 : 300}px Fraunces, Georgia, serif`;
-        g.strokeText(texto, 256, 270);
-      } else {
-        g.beginPath();
-        g.moveTo(256, 400);
-        g.bezierCurveTo(60, 270, 110, 120, 256, 210);
-        g.bezierCurveTo(402, 120, 452, 270, 256, 400);
-        g.stroke();
-      }
-    };
-    tracar(26, brilho, 50);
-    tracar(14, '#ffffff', 18);
-    textura.needsUpdate = true;
+  function redimensionar() {
+    const caixa = palco.getBoundingClientRect();
+    const w = Math.max(1, caixa.width);
+    const h = Math.max(1, caixa.height);
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    distanciaBase = Math.max(10.6, MEIA_LARGURA / (Math.tan(THREE.MathUtils.degToRad(FOV / 2)) * camera.aspect));
   }
 
-  // ----- interação (arrastar para girar) -----
-  let rotAlvo = 0;
-  let arrastando = false;
-  let inicioX = 0;
-  let rotInicio = 0;
-  let ultimaInteracao = -10;
-  const LIMITE = 0.85;
-
-  const aoPressionar = (e) => {
-    arrastando = true;
-    inicioX = e.clientX;
-    rotInicio = rotAlvo;
-    ultimaInteracao = tempo;
-    canvas.setPointerCapture?.(e.pointerId);
-  };
-  const aoMover = (e) => {
-    if (!arrastando) return;
-    rotAlvo = Math.max(-LIMITE, Math.min(LIMITE, rotInicio + (e.clientX - inicioX) / 160));
-    ultimaInteracao = tempo;
-  };
-  const aoSoltar = () => { arrastando = false; };
-  canvas.addEventListener('pointerdown', aoPressionar);
-  canvas.addEventListener('pointermove', aoMover);
-  canvas.addEventListener('pointerup', aoSoltar);
-  canvas.addEventListener('pointercancel', aoSoltar);
-
-  // ----- atualização a partir do assistente -----
   function atualizar({ temaId, cenas, numero }) {
-    const tema = temaPorId(temaId);
-    const c = tema.cena;
-    Object.keys(alvos).forEach((k) => alvos[k].set(c[k]));
-    alvosBaloes.forEach((cb, i) => cb.set(tema.baloes[i % tema.baloes.length]));
-    alvoCromo.set(tema.cromo[0]);
-    CHAVES.forEach((chave) => { partes[chave].alvo = cenas.includes(chave) ? 1 : 0; });
-    const texto = String(numero ?? '');
-    partes.neon.alvo = cenas.includes('neon') ? 1 : 0;
-    desenharNeon(texto, c.neon);
+    modelos.definirTema(temaPorId(temaId), numero);
+    Object.entries(modelos.partes).forEach(([chave, parte]) => { parte.alvo = cenas.includes(chave) ? 1 : 0; });
   }
 
-  // ----- laço -----
   let tempo = 0;
   let ultimo = 0;
   let rodando = false;
   let visivel = true;
-  let primeira = true;
 
   function quadro(agora) {
     if (!rodando) return;
     const dt = Math.min((agora - ultimo) / 1000, 0.05);
     ultimo = agora;
     tempo += dt;
-    if (!arrastando && tempo - ultimaInteracao > 3) rotAlvo = Math.sin(tempo * 0.35) * 0.35;
-    palcoGrupo.rotation.y += (rotAlvo - palcoGrupo.rotation.y) * Math.min(1, dt * 4);
-    const k = primeira ? 1 : 1 - Math.exp(-dt * 5);
-    primeira = false;
-    Object.keys(mats).forEach((nome) => mats[nome].color.lerp(alvos[nome], k));
-    matBaloes.forEach((m, i) => m.color.lerp(alvosBaloes[i], k));
-    matCromo.color.lerp(alvoCromo, k);
-    Object.values(partes).forEach((p) => {
-      p.atual += (p.alvo - p.atual) * Math.min(1, dt * 7);
-      p.grupo.visible = p.atual > 0.02;
-      p.grupo.scale.setScalar(Math.max(0.001, p.atual));
-    });
+    orbita.atualizar(dt);
+    modelos.animar(tempo, dt);
+    posicionarCamera();
     renderer.render(cena, camera);
     requestAnimationFrame(quadro);
   }
@@ -237,34 +228,12 @@ export async function iniciarEstudio({ canvas, palco, inicial }) {
     } else if (!deve) rodando = false;
   }
 
-  function redimensionar() {
-    const caixa = palco.getBoundingClientRect();
-    const w = Math.max(1, caixa.width);
-    const h = Math.max(1, caixa.height);
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  }
-
-  const observadorTamanho = new ResizeObserver(redimensionar);
-  observadorTamanho.observe(palco);
-  const observadorVisivel = new IntersectionObserver(([e]) => { visivel = e.isIntersecting; atualizarLaco(); });
-  observadorVisivel.observe(palco);
+  new ResizeObserver(redimensionar).observe(palco);
+  new IntersectionObserver(([e]) => { visivel = e.isIntersecting; atualizarLaco(); }).observe(palco);
   document.addEventListener('visibilitychange', atualizarLaco);
 
   redimensionar();
-  if (inicial) atualizar(inicial);
+  atualizar(inicial ?? { temaId: 'padrao', cenas: ['tapete', 'arco', 'redondo', 'cilindros', 'baloes'], numero: '' });
   atualizarLaco();
-
-  return {
-    atualizar,
-    destruir() {
-      rodando = false;
-      observadorTamanho.disconnect();
-      observadorVisivel.disconnect();
-      document.removeEventListener('visibilitychange', atualizarLaco);
-      pmrem.dispose();
-      renderer.dispose();
-    },
-  };
+  return { atualizar };
 }

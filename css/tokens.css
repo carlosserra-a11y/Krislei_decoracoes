@@ -35,12 +35,12 @@
   --raio-sm: 16px;
   --gutter: clamp(1rem, 4vw, 2.5rem);
   --largura: 1180px;
-  --espaco-secao: clamp(4.5rem, 3rem + 6vw, 9rem);
-  --altura-topo: 68px;
-  --altura-barra: 60px;
+  --espaco-secao: clamp(3.2rem, 2rem + 4vw, 6rem);
+  --altura-topo: 84px;
+  --altura-barra: 56px;
 
   --texto-h1: clamp(2.55rem, 1.3rem + 5.6vw, 5.2rem);
-  --texto-h2: clamp(2rem, 1.2rem + 3.4vw, 3.6rem);
+  --texto-h2: clamp(1.95rem, 1.2rem + 2.8vw, 3.25rem);
 
   --sombra: 0 26px 50px -26px color-mix(in srgb, var(--a1) 65%, transparent), 0 8px 18px -10px rgba(40, 20, 50, 0.22);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);

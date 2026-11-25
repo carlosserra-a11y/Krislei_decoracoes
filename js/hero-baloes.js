@@ -149,8 +149,8 @@ export async function iniciarBaloes({ canvas, hero, tema, aoEstourar }) {
     if (!arcos) return;
     const cx = (arcos.left + arcos.width / 2 - caixa.left - w / 2) * wpp;
     const cy = -(arcos.top + arcos.height / 2 - caixa.top - h / 2) * wpp;
-    const rx = arcos.width * 0.66 * wpp;
-    const ry = arcos.height * 0.62 * wpp;
+    const rx = arcos.width * 0.57 * wpp;
+    const ry = arcos.height * 0.6 * wpp;
     unidade = arcos.width * wpp * 0.07;
     matConfete.size = unidade * 0.55;
     metas.forEach((m, i) => {

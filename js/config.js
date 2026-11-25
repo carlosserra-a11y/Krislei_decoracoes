@@ -5,7 +5,6 @@ export const CONFIG = Object.freeze({
   marca: 'Krislei Decorações', // CONFIRMAR o nome comercial exato
   donaNome: 'Krislei', // CONFIRMAR a grafia
 
-  // OBRIGATÓRIO: só dígitos, com 55 + DDD + número. Ex.: '5548999998888'
   // Número informado pelo desenvolvedor: (48) 98869-0917 (o 9 na frente foi confirmado em 25/11/2026).
   whatsapp: '5548988690917',
   // Como o número aparece na tela. Ex.: '(48) 99999-8888'
@@ -21,7 +20,7 @@ export const CONFIG = Object.freeze({
   // null = "a confirmar" (a página usa texto neutro). true/false quando a cliente confirmar.
   servicos: Object.freeze({ entrega: null, montagem: null, retirada: null }),
 
-  // CONFIRMAR se a pista de LED faz parte do que ela aluga. false = esconde a seção inteira.
+  // CONFIRMAR se a pista de LED faz parte do que ela aluga. false = some do portfólio, das peças e do 3D.
   secoes: Object.freeze({ pistaLed: true }),
 
   // CONFIRMAR quais ocasiões ela atende.
@@ -36,20 +35,20 @@ export const CONFIG = Object.freeze({
   ]),
 
   // CONFIRMAR o que ela realmente aluga: ative/desative com `ativo`.
-  // `foto` e `pos` definem o recorte da foto real; `cena` liga a peça ao palco 3D.
+  // `padrao` = já vem marcada no assistente · `cena` = peça correspondente no palco 3D · `curto` = nome nas etiquetas.
   pecas: Object.freeze([
-    { id: 'paineis-arco', nome: 'Painéis em arco', desc: 'O arco que emoldura a mesa e vira o centro da festa.', ativo: true, padrao: true, cena: 'arco', foto: '02', pos: '22% 38%' },
-    { id: 'paineis-redondos', nome: 'Painéis redondos', desc: 'Com a arte do tema escolhido: jardim, cerejeira, margaridas…', ativo: true, padrao: true, cena: 'redondo', foto: '03', pos: '20% 28%' },
-    { id: 'cilindros', nome: 'Cilindros e mesas de doces', desc: 'Alturas diferentes que dão volume e ritmo ao cenário.', ativo: true, padrao: true, cena: 'cilindros', foto: '06', pos: '62% 82%' },
-    { id: 'arcos-baloes', nome: 'Arcos de balões orgânicos', desc: 'Balões de tamanhos variados, fosco, cromado e transparente.', ativo: true, padrao: true, cena: 'baloes', foto: '02', pos: '72% 8%' },
-    { id: 'neon', nome: 'Neon de números e letras', desc: 'O número da idade brilhando no meio da festa.', ativo: true, padrao: false, cena: 'neon', foto: '09', pos: '50% 76%' },
-    { id: 'tapetes', nome: 'Tapetes de pelo', desc: 'Um chão macio que “assenta” todo o cenário.', ativo: true, padrao: true, cena: 'tapete', foto: '03', pos: '50% 100%' },
-    { id: 'pista-led', nome: 'Pista de LED', desc: 'Um piso que brilha como um céu estrelado.', ativo: true, padrao: false, cena: null, foto: '08', pos: '50% 78%', secao: 'pistaLed' },
-    { id: 'baloes-bolha', nome: 'Balões-bolha transparentes', desc: 'Flutuando no teto, deixam o salão leve e mágico.', ativo: true, padrao: false, cena: null, foto: '08', pos: '50% 4%' },
-    { id: 'estantes', nome: 'Estantes-escada e nichos', desc: 'Para organizar lembrancinhas com charme.', ativo: true, padrao: false, cena: null, foto: '05', pos: '6% 62%' },
-    { id: 'vasos-flores', nome: 'Vasos, topiarias e flores', desc: 'Verde e flores que dão vida e acabamento.', ativo: true, padrao: false, cena: null, foto: '07', pos: '72% 40%' },
-    { id: 'letreiros', nome: 'Letreiros “Happy Birthday”', desc: 'Detalhe dourado que assina a comemoração.', ativo: true, padrao: false, cena: null, foto: '02', pos: '22% 24%' },
-    { id: 'suportes-doces', nome: 'Suportes e bandejas para doces', desc: 'Dourados, brancos ou coloridos, para a mesa ficar linda.', ativo: true, padrao: false, cena: null, foto: '06', pos: '30% 70%' },
-    { id: 'pecas-mdf', nome: 'Peças temáticas em MDF', desc: 'Borboletas, margaridas, passarinhos e casinhas recortadas.', ativo: true, padrao: false, cena: null, foto: '07', pos: '82% 96%' },
+    { id: 'paineis-arco', nome: 'Painéis em arco', curto: 'Painéis em arco', desc: 'O arco que emoldura a mesa e vira o centro da festa.', ativo: true, padrao: true, cena: 'arco' },
+    { id: 'paineis-redondos', nome: 'Painéis redondos', curto: 'Painéis redondos', desc: 'Com a arte do tema escolhido: jardim, cerejeira, margaridas…', ativo: true, padrao: true, cena: 'redondo' },
+    { id: 'cilindros', nome: 'Cilindros e mesas de doces', curto: 'Cilindros', desc: 'Alturas diferentes que dão volume e ritmo ao cenário.', ativo: true, padrao: true, cena: 'cilindros' },
+    { id: 'arcos-baloes', nome: 'Arcos de balões orgânicos', curto: 'Arcos de balões', desc: 'Balões de tamanhos variados, fosco, cromado e transparente.', ativo: true, padrao: true, cena: 'baloes' },
+    { id: 'suportes-doces', nome: 'Suportes e bandejas para doces', curto: 'Suportes de doces', desc: 'Dourados, brancos ou coloridos, para a mesa ficar linda.', ativo: true, padrao: true, cena: 'doces' },
+    { id: 'tapetes', nome: 'Tapetes de pelo', curto: 'Tapetes', desc: 'Um chão macio que “assenta” todo o cenário.', ativo: true, padrao: true, cena: 'tapete' },
+    { id: 'vasos-flores', nome: 'Vasos, topiarias e flores', curto: 'Vasos e flores', desc: 'Verde e flores que dão vida e acabamento.', ativo: true, padrao: true, cena: 'vasos' },
+    { id: 'letreiros', nome: 'Letreiros “Happy Birthday”', curto: 'Letreiros', desc: 'Detalhe dourado que assina a comemoração.', ativo: true, padrao: true, cena: 'letreiro' },
+    { id: 'neon', nome: 'Neon de números e letras', curto: 'Neon', desc: 'O número da idade brilhando no meio da festa.', ativo: true, padrao: false, cena: 'neon' },
+    { id: 'baloes-bolha', nome: 'Balões-bolha transparentes', curto: 'Balões-bolha', desc: 'Flutuando no teto, deixam o salão leve e mágico.', ativo: true, padrao: false, cena: 'bolhas' },
+    { id: 'pecas-mdf', nome: 'Peças temáticas em MDF', curto: 'Peças em MDF', desc: 'Borboletas, margaridas, passarinhos e casinhas recortadas.', ativo: true, padrao: false, cena: 'mdf' },
+    { id: 'estantes', nome: 'Estantes-escada e nichos', curto: 'Estantes', desc: 'Para organizar lembrancinhas com charme.', ativo: true, padrao: false, cena: 'estante' },
+    { id: 'pista-led', nome: 'Pista de LED', curto: 'Pista de LED', desc: 'Um piso que brilha como um céu estrelado.', ativo: true, padrao: false, cena: 'led', secao: 'pistaLed' },
   ]),
 });

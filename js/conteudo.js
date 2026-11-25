@@ -1,52 +1,25 @@
 // Monta, a partir de config.js, os trechos de conteúdo gerados por script.
-import { fotoUrl } from './dados.js';
 import { iconeSvg } from './icones.js';
 
 const sorteio = (min, max) => min + Math.random() * (max - min);
 
-export function montarMarquee(ocasioes) {
-  const trilho = document.getElementById('marquee');
-  if (!trilho) return;
-  const nomes = [...ocasioes.map((o) => o.nome), ...ocasioes.map((o) => o.nome)];
-  const metade = nomes.map((n) => `<span class="faixa__item">${n}</span>`).join('');
+function preencherTrilho(id, nomes) {
+  const trilho = document.getElementById(id);
+  if (!trilho || !nomes.length) return;
+  const metade = [...nomes, ...nomes].map((n) => `<span class="faixa__item">${n}</span>`).join('');
   // duas metades idênticas: a animação anda -50% e recomeça sem salto
   trilho.innerHTML = metade + metade;
 }
 
-export function montarPecas(pecas) {
-  const grade = document.getElementById('grade-pecas');
-  if (!grade) return;
-  grade.innerHTML = pecas
-    .map((p, i) => {
-      const imagem = fotoUrl(p.foto, 960);
-      return `<article class="peca reveal" style="--i:${i % 4}">
-        <div class="peca__foto" aria-hidden="true" style="background-image:url('${imagem}');background-position:${p.pos}">
-          <span class="peca__icone">${iconeSvg(p.id)}</span>
-        </div>
-        <svg class="peca__balao" viewBox="0 0 24 26" aria-hidden="true"><use href="#i-balao"/></svg>
-        <h3>${p.nome}</h3>
-        <p>${p.desc}</p>
-      </article>`;
-    })
-    .join('');
+export function montarMarquees(ocasioes, pecas) {
+  preencherTrilho('marquee-1', ocasioes.filter((o) => o.id !== 'outra').map((o) => o.nome));
+  preencherTrilho('marquee-2', pecas.map((p) => p.curto ?? p.nome));
 }
 
-export function montarLed() {
-  const piso = document.getElementById('led-piso');
-  const ceu = document.getElementById('led-bolhas');
-  if (piso) {
-    const luzes = Array.from({ length: 110 }, () => {
-      const estilo = `--x:${sorteio(2, 98).toFixed(1)}%;--y:${sorteio(4, 96).toFixed(1)}%;--t:${sorteio(1.6, 4).toFixed(2)}s;--d:-${sorteio(0, 4).toFixed(2)}s`;
-      return `<i style="${estilo}"></i>`;
-    }).join('');
-    piso.innerHTML = `<div class="led__plano">${luzes}</div>`;
-  }
-  if (ceu) {
-    ceu.innerHTML = Array.from({ length: 12 }, () => {
-      const estilo = `--x:${sorteio(0, 92).toFixed(1)}%;--y:${sorteio(2, 80).toFixed(1)}%;--s:${sorteio(36, 120).toFixed(0)}px;--d:-${sorteio(0, 6).toFixed(1)}s`;
-      return `<i class="bolha" style="${estilo}"></i>`;
-    }).join('');
-  }
+export function montarPecasChips(pecas) {
+  const lista = document.getElementById('pecas-chips');
+  if (!lista) return;
+  lista.innerHTML = pecas.map((p) => `<li title="${p.desc}"><span>${iconeSvg(p.id)}</span>${p.curto ?? p.nome}</li>`).join('');
 }
 
 export function montarBaloesFinais() {

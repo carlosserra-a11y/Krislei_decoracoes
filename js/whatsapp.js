@@ -64,16 +64,22 @@ export function mensagemData({ data, ocasiao, convidados } = {}) {
   return `Olá, Krislei! Quero saber se você tem disponibilidade ${dia}${extra}.`;
 }
 
-export function mensagemPista() {
-  return 'Olá, Krislei! Vi a *pista de LED* no seu site e quero um orçamento.';
+export function mensagemCenario(titulo) {
+  return `Olá, Krislei! Vi o cenário *${titulo}* no seu site e quero algo parecido. Podemos conversar?`;
 }
 
-export function mensagemMini() {
-  return 'Olá, Krislei! Vi a *mini table* no seu site e quero saber mais. Podemos conversar?';
+export function mensagemOcasiao(ocasiao) {
+  return ocasiao ? `Olá, Krislei! Quero uma decoração para *${ocasiao}*. Pode me ajudar?` : mensagemGeral();
 }
 
-export function mensagemVideo() {
-  return 'Olá, Krislei! Vi os vídeos no seu site e quero uma decoração assim. Podemos conversar?';
+/** Texto para o visitante mandar a página para a família (sem número: ele escolhe o contato). */
+export function mensagemCompartilhar({ url, tema } = {}) {
+  const clima = tema ? ` (clima ${tema})` : '';
+  return `Olha o cenário que montei para a festa${clima}: ${url}`;
+}
+
+export function urlCompartilhar(texto) {
+  return `https://wa.me/?text=${encodeURIComponent(String(texto))}`;
 }
 
 /**

@@ -148,7 +148,24 @@ function preencherResumo() {
   formulario.querySelector('#resumo').replaceChildren(lista);
 }
 
-function mostrarPasso(n) {
+/** Manda a página (com o clima escolhido) para alguém da família, sem escolher o número por eles. */
+async function compartilhar() {
+  const url = new URL(location.pathname, location.origin);
+  const temTema = estado.tema !== 'outro';
+  if (temTema) url.searchParams.set('tema', estado.tema);
+  const texto = wa.mensagemCompartilhar({ url: url.href, tema: temTema ? temaPorId(estado.tema).nome : '' });
+  if (navigator.share) {
+    try {
+      await navigator.share({ text: texto });
+      return;
+    } catch (erro) {
+      if (erro.name === 'AbortError') return; // a pessoa desistiu
+    }
+  }
+  window.open(wa.urlCompartilhar(texto), '_blank', 'noopener');
+}
+
+function mostrarPasso(n, { focar = true } = {}) {
   estado = { ...estado, passo: n };
   formulario.querySelectorAll('[data-passo]').forEach((el) => {
     const ativo = Number(el.dataset.passo) === n;
@@ -171,9 +188,10 @@ function mostrarPasso(n) {
   proximo.textContent = n === TOTAL_PASSOS ? 'Ver o resumo' : 'Continuar';
   if (n === RESUMO) preencherResumo();
   atualizarLinks();
+  // o foco só acompanha quando a pessoa navega (na abertura da página ele não é roubado)
+  if (!focar) return;
   const alvo = formulario.querySelector(`[data-passo="${n}"]`);
-  (alvo.querySelector('input:not([hidden]):not([disabled]), h3') ?? alvo).focus?.({ preventScroll: true });
-  if (alvo.tagName === 'DIV') alvo.querySelector('h3')?.setAttribute('tabindex', '-1');
+  (alvo.querySelector('input:checked, input:not([disabled]), h3') ?? alvo).focus?.({ preventScroll: true });
 }
 
 function passoValido(n) {
@@ -220,7 +238,8 @@ export function iniciarAssistente() {
   carregarRascunho();
   montarOpcoes();
   sincronizarCampos();
-  mostrarPasso(1);
+  mostrarPasso(1, { focar: false });
+  formulario.querySelector('#compartilhar').addEventListener('click', compartilhar);
   registrarProvedor('assistente', () => wa.mensagemAssistente(pedido()));
 
   formulario.addEventListener('change', aoMudar);

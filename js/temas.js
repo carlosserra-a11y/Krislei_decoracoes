@@ -1,6 +1,5 @@
-// Seletor de temas: troca a paleta da página inteira, as fotos do hero e monta a galeria de cenários.
+// Seletor de temas: troca a paleta da página inteira e as fotos dos arcos do hero.
 import { TEMAS, TEMA_PADRAO, FOTOS, temaPorId, fotosLaterais, fotoSrcset, fotoMaior } from './dados.js';
-import { hidratarFotos } from './fotos.js';
 
 const CHAVE = 'krislei:tema';
 const MAPA_TOKENS = {
@@ -94,8 +93,8 @@ function montarPaletas() {
   if (!grupo) return;
   grupo.innerHTML = TEMAS.map((t) => {
     const cores = `--c1:${t.tokens.a1};--c2:${t.tokens.a2};--c3:${t.tokens.a3}`;
-    return `<button type="button" class="paleta" role="radio" aria-checked="false" data-tema="${t.id}" style="${cores}">
-      <span class="paleta__bola"></span><span>${t.nome}</span></button>`;
+    return `<button type="button" class="paleta" role="radio" aria-checked="false" data-tema="${t.id}" title="${t.nome}" style="${cores}">
+      <span class="paleta__bola"></span><span class="paleta__nome">${t.nome}</span></button>`;
   }).join('');
   grupo.addEventListener('click', (evento) => {
     const botao = evento.target.closest('.paleta');
@@ -112,50 +111,8 @@ function montarPaletas() {
   });
 }
 
-function ativarInclinacao(card) {
-  const quadro = card.querySelector('.tema-card__quadro');
-  if (!quadro) return;
-  quadro.addEventListener('pointermove', (evento) => {
-    if (evento.pointerType !== 'mouse') return;
-    const caixa = quadro.getBoundingClientRect();
-    const x = (evento.clientX - caixa.left) / caixa.width;
-    const y = (evento.clientY - caixa.top) / caixa.height;
-    quadro.style.transform = `rotateY(${((x - 0.5) * 14).toFixed(2)}deg) rotateX(${((0.5 - y) * 12).toFixed(2)}deg)`;
-    quadro.style.setProperty('--mx', `${(x * 100).toFixed(0)}%`);
-    quadro.style.setProperty('--my', `${(y * 100).toFixed(0)}%`);
-  });
-  quadro.addEventListener('pointerleave', () => { quadro.style.transform = ''; });
-}
-
-function montarGaleria() {
-  const trilho = document.getElementById('galeria-trilho');
-  if (!trilho) return;
-  trilho.innerHTML = TEMAS.filter((t) => t.id !== TEMA_PADRAO).map((t, i) => {
-    const chips = (t.chips ?? []).map((c) => `<li>${c}</li>`).join('');
-    return `<article class="tema-card reveal" data-tema="${t.id}" style="--i:${i % 3}">
-      <div class="tema-card__quadro">
-        <div class="tema-card__arco"><img data-foto="${t.fotos[0]}" data-sizes="(min-width: 900px) 30vw, 80vw" loading="lazy" decoding="async" alt=""><i class="tema-card__brilho"></i></div>
-      </div>
-      <div class="tema-card__info">
-        <h3>${t.nome}</h3><p>${t.frase}</p>
-        <ul class="chips">${chips}</ul>
-        <div class="tema-card__acoes">
-          <button type="button" class="btn btn--leve" data-aplicar-tema="${t.id}">Ver neste clima</button>
-          <a class="btn btn--wa" data-wa="tema" data-wa-tema="${t.id}" data-wa-origem="tema-${t.id}" href="#" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg>Quero este tema</a>
-        </div>
-      </div></article>`;
-  }).join('');
-  hidratarFotos(trilho);
-  trilho.querySelectorAll('.tema-card').forEach(ativarInclinacao);
-  trilho.addEventListener('click', (evento) => {
-    const botao = evento.target.closest('[data-aplicar-tema]');
-    if (botao) aplicarTema(botao.dataset.aplicarTema);
-  });
-}
-
 export function iniciarTemas() {
   montarPaletas();
-  montarGaleria();
   const inicial = lerSalvo();
   // O hero já nasce com o tema padrão: só precisa trocar se o visitante tinha outro salvo.
   atual = temaPorId(TEMA_PADRAO);

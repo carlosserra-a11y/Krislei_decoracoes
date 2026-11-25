@@ -1,4 +1,4 @@
-// Animações: revelações ao rolar (sem dependências) e parallax/scroll com GSAP + Lenis (carregados sob demanda).
+// Animações: revelações e cursor (sem dependências) + parallax e rolagem suave com GSAP + Lenis (sob demanda).
 import { dividirPalavras } from './conteudo.js';
 
 const $ = (seletor, raiz = document) => raiz.querySelector(seletor);
@@ -18,9 +18,37 @@ export function iniciarReveal() {
         observador.unobserve(entrada.target);
       });
     },
-    { threshold: 0.12, rootMargin: '0px 0px -6% 0px' },
+    { threshold: 0.1, rootMargin: '0px 0px -5% 0px' },
   );
   $$('.reveal, .linhas, .assinatura, .historia__citacao, .historia__final').forEach((el) => observador.observe(el));
+}
+
+/** Anel que segue o mouse e cresce sobre o que é clicável (só com mouse). */
+export function iniciarCursor() {
+  const anel = $('#cursor');
+  if (!anel || !temHover()) return;
+  const alvo = { x: -100, y: -100 };
+  const atual = { ...alvo };
+  let andando = false;
+  const quadro = () => {
+    atual.x += (alvo.x - atual.x) * 0.22;
+    atual.y += (alvo.y - atual.y) * 0.22;
+    anel.style.transform = `translate3d(${atual.x.toFixed(1)}px, ${atual.y.toFixed(1)}px, 0)`;
+    andando = Math.abs(alvo.x - atual.x) + Math.abs(alvo.y - atual.y) > 0.3;
+    if (andando) requestAnimationFrame(quadro);
+  };
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    alvo.x = e.clientX;
+    alvo.y = e.clientY;
+    anel.classList.add('ativo');
+    anel.classList.toggle('sobre', Boolean(e.target.closest?.('a, button, input, label, summary, canvas')));
+    if (!andando) {
+      andando = true;
+      requestAnimationFrame(quadro);
+    }
+  }, { passive: true });
+  document.documentElement.addEventListener('pointerleave', () => anel.classList.remove('ativo'));
 }
 
 // ----- blocos com GSAP -----
@@ -30,93 +58,90 @@ function progressoDeLeitura(ScrollTrigger) {
   ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (self) => barra.style.setProperty('--p', self.progress.toFixed(4)) });
 }
 
-function parallaxDoHero(gsap, ScrollTrigger) {
+function parallaxDoHero(gsap) {
   const hero = $('.hero');
   if (!hero) return;
   const gatilho = { trigger: hero, start: 'top top', end: 'bottom top', scrub: true };
+  // no celular o texto fica em cima das fotos: o deslocamento precisa ser pequeno para não sobrepor
+  const lado = window.matchMedia('(min-width: 900px)').matches;
+  const intensidade = lado ? 0.8 : 0.12;
   $$('[data-parallax]', hero).forEach((el) => {
     const fator = parseFloat(el.dataset.parallax);
-    gsap.to(el, { y: () => -fator * hero.offsetHeight * 0.9, ease: 'none', scrollTrigger: gatilho });
-    gsap.fromTo(el, { '--py': '-4%' }, { '--py': '5%', ease: 'none', scrollTrigger: gatilho });
+    gsap.to(el, { y: () => -fator * hero.offsetHeight * intensidade, ease: 'none', scrollTrigger: gatilho });
   });
-  $$('.orn', $('.hero__ornamentos')).forEach((el) => {
+  $$('.arco', hero).forEach((arco) => gsap.fromTo(arco, { '--py': '-5%' }, { '--py': '7%', ease: 'none', scrollTrigger: gatilho }));
+  $$('.orn', hero).forEach((el) => {
     const f = parseFloat(el.dataset.orn);
-    gsap.to(el, { y: -f * 260, rotation: f * 40, ease: 'none', scrollTrigger: gatilho });
+    gsap.to(el, { y: -f * 300, rotation: f * 60, ease: 'none', scrollTrigger: gatilho });
   });
-  if (!temHover()) return;
-  const mover = (alvo, amplitude) => ({ x: gsap.quickTo(alvo, 'x', { duration: 0.8 }), y: gsap.quickTo(alvo, 'y', { duration: 0.8 }), amplitude });
-  const camadas = [mover($('.hero__fundo'), 24), mover($('.hero__ornamentos'), -18)];
+  if (lado) gsap.fromTo('.hero__texto', { y: 0, opacity: 1 }, { y: 90, opacity: 0.25, ease: 'none', scrollTrigger: { ...gatilho, start: '25% top' } });
+}
+
+/** O mouse inclina os arcos em 3D e desloca fundo e enfeites em profundidades diferentes. */
+function profundidadeNoMouse(gsap) {
+  const hero = $('.hero');
+  if (!hero || !temHover()) return;
+  const arcos = $('[data-hero-arcos]', hero);
+  gsap.set(arcos, { transformPerspective: 1400 });
+  const rapido = (alvo, prop) => gsap.quickTo(alvo, prop, { duration: 0.9, ease: 'power3.out' });
+  const girarY = rapido(arcos, 'rotationY');
+  const girarX = rapido(arcos, 'rotationX');
+  const camadas = [
+    { x: rapido($('.hero__fundo'), 'x'), y: rapido($('.hero__fundo'), 'y'), amplitude: 34 },
+    { x: rapido($('.hero__ornamentos'), 'x'), y: rapido($('.hero__ornamentos'), 'y'), amplitude: -26 },
+  ];
   hero.addEventListener('pointermove', (e) => {
-    const nx = e.clientX / innerWidth - 0.5;
-    const ny = e.clientY / innerHeight - 0.5;
+    const nx = e.clientX / window.innerWidth - 0.5;
+    const ny = e.clientY / window.innerHeight - 0.5;
+    girarY(nx * 10);
+    girarX(-ny * 7);
     camadas.forEach(({ x, y, amplitude }) => { x(nx * amplitude); y(ny * amplitude); });
   });
 }
 
-function ornamentosDasSecoes(gsap) {
-  $$('.impacto__orn').forEach((el) => {
-    const f = parseFloat(el.dataset.orn);
-    gsap.fromTo(el, { y: 90 * f, rotation: -10 * f }, {
-      y: -170 * f, rotation: 28 * f, ease: 'none',
-      scrollTrigger: { trigger: el.closest('section'), start: 'top bottom', end: 'bottom top', scrub: true },
+/** Cada foto do portfólio desliza dentro da própria moldura conforme a posição na tela. */
+function parallaxDoPortfolio(ScrollTrigger) {
+  const grade = $('#bento');
+  if (!grade) return;
+  const atualizar = () => {
+    const meio = window.innerHeight / 2;
+    $$('.tile img', grade).forEach((img) => {
+      const caixa = img.parentElement.getBoundingClientRect();
+      const desvio = Math.max(-1, Math.min(1, (caixa.top + caixa.height / 2 - meio) / meio));
+      img.style.setProperty('--py', `${(desvio * -6).toFixed(2)}%`);
     });
-  });
+  };
+  ScrollTrigger.create({ trigger: grade, start: 'top bottom', end: 'bottom top', onUpdate: atualizar });
+  document.addEventListener('layout:mudou', () => requestAnimationFrame(atualizar));
+  atualizar();
 }
 
-function frasesDeImpacto(gsap) {
-  const frase = $('#impacto-frase');
-  if (!frase) return;
-  const palavras = dividirPalavras(frase, 'palavra');
-  gsap.to(palavras, {
-    opacity: 1, stagger: 0.12, ease: 'none',
-    scrollTrigger: { trigger: frase, start: 'top 85%', end: 'bottom 45%', scrub: true },
+function parallaxDasSecoes(gsap) {
+  $$('.secao h2, .final h2').forEach((titulo) => {
+    gsap.fromTo(titulo, { y: 30 }, { y: -20, ease: 'none', scrollTrigger: { trigger: titulo, start: 'top bottom', end: 'bottom top', scrub: true } });
   });
-}
-
-function galeriaFixada(gsap) {
-  const mm = gsap.matchMedia();
-  mm.add('(min-width: 900px)', () => {
-    const galeria = $('#galeria');
-    const trilho = $('#galeria-trilho');
-    const pino = $('.galeria__pin');
-    if (!galeria || !trilho || !pino) return undefined;
-    galeria.classList.add('pinada');
-    const distancia = () => Math.max(0, trilho.scrollWidth - window.innerWidth);
-    const anim = gsap.to(trilho, {
-      x: () => -distancia(), ease: 'none',
-      scrollTrigger: { trigger: pino, start: 'center center', end: () => `+=${distancia()}`, pin: true, scrub: 1, invalidateOnRefresh: true, anticipatePin: 1 },
-    });
-    $$('.tema-card__arco img', trilho).forEach((img) => {
-      gsap.fromTo(img, { xPercent: -4 }, {
-        xPercent: 4, ease: 'none',
-        scrollTrigger: { trigger: img.closest('.tema-card'), containerAnimation: anim, start: 'left right', end: 'right left', scrub: true },
-      });
-    });
-    return () => galeria.classList.remove('pinada');
+  $$('.faixa__linha').forEach((linha, i) => {
+    const sentido = i === 0 ? 1 : -1;
+    gsap.fromTo(linha, { rotation: -2.4 * sentido }, { rotation: 0.4 * sentido, ease: 'none', scrollTrigger: { trigger: '.faixa', start: 'top bottom', end: 'bottom top', scrub: true } });
   });
-}
-
-function pistaDeLed(gsap) {
-  const secao = $('#led');
-  if (!secao || secao.hidden) return;
-  const gatilho = { trigger: secao, start: 'top bottom', end: 'bottom top', scrub: true };
-  gsap.fromTo('#led-piso', { '--inclina': '72deg' }, { '--inclina': '46deg', ease: 'none', scrollTrigger: gatilho });
-  gsap.fromTo('#led-bolhas', { y: 60 }, { y: -120, ease: 'none', scrollTrigger: gatilho });
+  const arco = $('.historia__arco img');
+  if (arco) gsap.fromTo(arco, { scale: 1.18, yPercent: -7 }, { scale: 1.18, yPercent: 7, ease: 'none', scrollTrigger: { trigger: '#historia', start: 'top bottom', end: 'bottom top', scrub: true } });
+  gsap.fromTo('.final', { scale: 0.92 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.final', start: 'top bottom', end: 'top 35%', scrub: true } });
 }
 
 function linhaDoTempo(ScrollTrigger) {
   const linha = $('#linha-tempo');
-  const texto = $('.historia__texto');
-  if (!linha || !texto) return;
+  const secao = $('#historia');
+  if (!linha || !secao) return;
   ScrollTrigger.create({
-    trigger: texto, start: 'top 70%', end: 'bottom 70%',
+    trigger: secao, start: 'top 65%', end: 'bottom 85%',
     onUpdate: (self) => linha.style.setProperty('--prog', self.progress.toFixed(3)),
   });
 }
 
 function velocidadeDoMarquee(gsap, ScrollTrigger) {
-  const animacao = $('#marquee')?.getAnimations?.()[0];
-  if (!animacao) return;
+  const animacoes = $$('.faixa__trilho').flatMap((t) => t.getAnimations?.() ?? []);
+  if (!animacoes.length) return;
   let direcao = 1;
   let fator = 1;
   ScrollTrigger.create({
@@ -128,13 +153,13 @@ function velocidadeDoMarquee(gsap, ScrollTrigger) {
   });
   gsap.ticker.add(() => {
     fator += (1 - fator) * 0.06;
-    animacao.updatePlaybackRate(direcao * fator);
+    animacoes.forEach((a) => a.updatePlaybackRate(direcao * fator));
   });
 }
 
 function cursorMagnetico(gsap) {
   if (!temHover()) return;
-  $$('.btn--grande, .btn--gigante').forEach((botao) => {
+  $$('.hero .btn--grande, .btn--gigante').forEach((botao) => {
     botao.addEventListener('pointermove', (e) => {
       const caixa = botao.getBoundingClientRect();
       gsap.to(botao, { x: (e.clientX - caixa.left - caixa.width / 2) * 0.18, y: (e.clientY - caixa.top - caixa.height / 2) * 0.28, duration: 0.4 });
@@ -148,7 +173,7 @@ function balaozinhos() {
   if (!temHover()) return;
   document.addEventListener('pointerenter', (e) => {
     const botao = e.target instanceof Element ? e.target.closest('.btn--wa') : null;
-    if (!botao || botao.dataset.subindo) return;
+    if (!botao || botao.dataset.subindo || botao.closest('dialog')) return;
     botao.dataset.subindo = '1';
     const caixa = botao.getBoundingClientRect();
     const balao = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -161,14 +186,22 @@ function balaozinhos() {
   }, true);
 }
 
-function ancoras(lenis) {
+function rolagemSuave(lenis, ScrollTrigger) {
   document.addEventListener('click', (e) => {
     const link = e.target.closest?.('a[href^="#"]');
     const alvo = link && link.getAttribute('href').length > 1 ? $(link.getAttribute('href')) : null;
     if (!alvo) return;
     e.preventDefault();
-    lenis.scrollTo(alvo, { offset: -72 });
+    lenis.scrollTo(alvo, { offset: alvo.id === 'topo' ? 0 : -64 });
     history.pushState(null, '', link.getAttribute('href'));
+  });
+  document.addEventListener('modal:aberto', () => lenis.stop());
+  document.addEventListener('modal:fechado', () => lenis.start());
+  // Quando a altura da página muda (filtro, história), recalcula os gatilhos.
+  let espera = 0;
+  document.addEventListener('layout:mudou', () => {
+    clearTimeout(espera);
+    espera = setTimeout(() => ScrollTrigger.refresh(), 750);
   });
 }
 
@@ -182,16 +215,15 @@ export async function iniciarAnimacoes() {
   gsap.ticker.lagSmoothing(0);
 
   progressoDeLeitura(ScrollTrigger);
-  parallaxDoHero(gsap, ScrollTrigger);
-  ornamentosDasSecoes(gsap);
-  frasesDeImpacto(gsap);
-  galeriaFixada(gsap);
-  pistaDeLed(gsap);
+  parallaxDoHero(gsap);
+  profundidadeNoMouse(gsap);
+  parallaxDoPortfolio(ScrollTrigger);
+  parallaxDasSecoes(gsap);
   linhaDoTempo(ScrollTrigger);
   velocidadeDoMarquee(gsap, ScrollTrigger);
   cursorMagnetico(gsap);
   balaozinhos();
-  ancoras(lenis);
+  rolagemSuave(lenis, ScrollTrigger);
   window.addEventListener('load', () => ScrollTrigger.refresh());
   document.fonts?.ready.then(() => ScrollTrigger.refresh());
   return { gsap, ScrollTrigger, lenis };

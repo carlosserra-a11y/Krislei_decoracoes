@@ -19,12 +19,8 @@ function mensagemPara(link) {
       const id = link.dataset.waTema;
       return wa.mensagemTema({ tema: (id ? temaPorId(id) : temaAtual()).nome });
     }
-    case 'mini':
-      return wa.mensagemMini();
-    case 'pista':
-      return wa.mensagemPista();
-    case 'video':
-      return wa.mensagemVideo();
+    case 'ocasiao':
+      return wa.mensagemOcasiao(link.dataset.ocasiao);
     case 'data':
       return wa.mensagemData({ data: document.getElementById('data-rapida')?.value });
     default:
@@ -45,7 +41,12 @@ function aplicarNumero() {
   document.querySelectorAll('a[data-tel]').forEach((el) => {
     el.href = wa.montarTel(CONFIG.whatsapp);
   });
-  document.querySelectorAll('a[data-wa]').forEach((el) => el.setAttribute('aria-label', `${el.textContent.replace(/\s+/g, ' ').trim()} — ${CONFIG.whatsappExibicao}`));
+  document.querySelectorAll('a[data-wa]').forEach((el) => {
+    const texto = el.textContent.replace(/\s+/g, ' ').trim();
+    // o número só é acrescentado ao rótulo quando o botão ainda não o mostra
+    const numero = texto.includes(CONFIG.whatsappExibicao) ? '' : ` — WhatsApp ${CONFIG.whatsappExibicao}`;
+    el.setAttribute('aria-label', `${texto}${numero}`);
+  });
 }
 
 function avisoDeDesenvolvimento() {
@@ -126,7 +127,15 @@ export function iniciarSite() {
   atualizarLinks();
 
   document.addEventListener('tema:mudou', atualizarLinks);
-  document.getElementById('data-rapida')?.addEventListener('input', atualizarLinks);
+  const dataRapida = document.getElementById('data-rapida');
+  if (dataRapida) {
+    dataRapida.min = wa.hojeISO();
+    dataRapida.addEventListener('input', () => {
+      // data digitada no passado não entra na mensagem
+      if (wa.dataPassada(dataRapida.value)) dataRapida.value = '';
+      atualizarLinks();
+    });
+  }
   // Garante a mensagem mais recente na hora do clique e avisa quem quiser medir a origem.
   document.addEventListener('click', (evento) => {
     const link = evento.target.closest?.('a[data-wa]');
