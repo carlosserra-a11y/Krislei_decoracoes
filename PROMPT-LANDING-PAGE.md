@@ -89,8 +89,8 @@ Crie **um único arquivo de configuração** (`js/config.js`, exportando um obje
 ### 4.2 Vídeos (`assets/videos/`)
 
 - `video-01.mp4` (~7,4 MB) e `video-02.mp4` (~4,1 MB), gravados no mesmo dia das fotos.
-- **Eu não consegui assistir aos vídeos.** Pelos horários de envio, o `video-01` veio junto das fotos de 1 aninho/azul-marinho e o `video-02` junto das fotos de 15 anos — **confirme abrindo os arquivos** (frame inicial, orientação, duração, áudio) e ajuste legendas e posição na página de acordo.
-- Use-os na seção "Veja ao vivo" (seção 8.7). Se algum for vertical, use moldura de celular; se horizontal, moldura de TV/painel arco.
+- **Conferidos depois da criação do prompt:** ambos são **verticais** e têm ~35 s. O `video-01` (480×854) mostra o cenário **Preto & Branco** com gravata-borboleta (póster: foto `05`). O `video-02` (464×832) mostra o **neon “15”** sobre o tapete preto (póster: foto `09`). Ainda vale conferir o áudio.
+- Use-os na seção "Veja ao vivo" (seção 8.7), em molduras de celular.
 
 ### 4.3 Identidade visual
 

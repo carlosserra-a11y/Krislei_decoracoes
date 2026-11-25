@@ -1,0 +1,8 @@
+<!-- Logotipo tipográfico PROVISÓRIO. Troque por este arquivo quando a cliente enviar o logo oficial. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 96" role="img" aria-label="Krislei decorações">
+  <path d="M8 90V38C8 18 22 6 38 6s30 12 30 32v52z" fill="none" stroke="#B8386B" stroke-width="4"/>
+  <circle cx="38" cy="40" r="13" fill="#F29CB7"/>
+  <circle cx="50" cy="26" r="7" fill="#B9A3E3"/>
+  <text x="84" y="58" font-family="'Pinyon Script', 'Brush Script MT', cursive" font-size="54" fill="#B8386B">Krislei</text>
+  <text x="88" y="82" font-family="Nunito, Arial, sans-serif" font-size="13" font-weight="800" letter-spacing="6" fill="#2B2230">DECORAÇÕES</text>
+</svg>

@@ -1,0 +1,12 @@
+{
+  "name": "krislei-decoracoes-tools",
+  "private": true,
+  "type": "module",
+  "description": "Ferramentas de build de mídia (o site em si não tem build).",
+  "scripts": {
+    "otimizar": "node otimizar-midia.mjs"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5"
+  }
+}

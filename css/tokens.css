@@ -1,0 +1,63 @@
+/* Tokens de design. As cores são "registradas" para poder animar a troca de tema. */
+@property --bg { syntax: '<color>'; inherits: true; initial-value: #FFF7F1; }
+@property --bg2 { syntax: '<color>'; inherits: true; initial-value: #FFEDE3; }
+@property --texto { syntax: '<color>'; inherits: true; initial-value: #2B2230; }
+@property --suave { syntax: '<color>'; inherits: true; initial-value: #5E5266; }
+@property --a1 { syntax: '<color>'; inherits: true; initial-value: #F29CB7; }
+@property --a2 { syntax: '<color>'; inherits: true; initial-value: #B9A3E3; }
+@property --a3 { syntax: '<color>'; inherits: true; initial-value: #9ADBC9; }
+@property --on-a1 { syntax: '<color>'; inherits: true; initial-value: #2B2230; }
+@property --destaque { syntax: '<color>'; inherits: true; initial-value: #B8386B; }
+@property --card { syntax: '<color>'; inherits: true; initial-value: rgba(255, 255, 255, 0.72); }
+@property --borda { syntax: '<color>'; inherits: true; initial-value: rgba(43, 34, 48, 0.12); }
+
+:root {
+  --bg: #FFF7F1;
+  --bg2: #FFEDE3;
+  --texto: #2B2230;
+  --suave: #5E5266;
+  --a1: #F29CB7;
+  --a2: #B9A3E3;
+  --a3: #9ADBC9;
+  --on-a1: #2B2230;
+  --destaque: #B8386B;
+  --card: rgba(255, 255, 255, 0.72);
+  --borda: rgba(43, 34, 48, 0.12);
+
+  --wa: #25D366;
+  --wa-texto: #06301A;
+
+  --fonte-titulo: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --fonte-script: 'Pinyon Script', 'Brush Script MT', cursive;
+  --fonte-corpo: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --raio: 28px;
+  --raio-sm: 16px;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --largura: 1180px;
+  --espaco-secao: clamp(4.5rem, 3rem + 6vw, 9rem);
+  --altura-topo: 68px;
+  --altura-barra: 60px;
+
+  --texto-h1: clamp(2.55rem, 1.3rem + 5.6vw, 5.2rem);
+  --texto-h2: clamp(2rem, 1.2rem + 3.4vw, 3.6rem);
+
+  --sombra: 0 26px 50px -26px color-mix(in srgb, var(--a1) 65%, transparent), 0 8px 18px -10px rgba(40, 20, 50, 0.22);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  transition: --bg 0.6s ease, --bg2 0.6s ease, --texto 0.6s ease, --suave 0.6s ease, --a1 0.6s ease,
+    --a2 0.6s ease, --a3 0.6s ease, --on-a1 0.6s ease, --destaque 0.6s ease, --card 0.6s ease, --borda 0.6s ease;
+}
+
+/* Seções escuras mantêm o próprio fundo, qualquer que seja o tema ativo. */
+.secao--escura {
+  --bg: #1B1233;
+  --bg2: #241848;
+  --texto: #FFFFFF;
+  --suave: #DDD5F2;
+  --card: rgba(255, 255, 255, 0.08);
+  --borda: rgba(255, 255, 255, 0.2);
+  --destaque: var(--a1);
+  color: var(--texto);
+  background: var(--bg);
+}
