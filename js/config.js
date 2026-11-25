@@ -6,11 +6,10 @@ export const CONFIG = Object.freeze({
   donaNome: 'Krislei', // CONFIRMAR a grafia
 
   // OBRIGATÓRIO: só dígitos, com 55 + DDD + número. Ex.: '5548999998888'
-  // Número informado pelo desenvolvedor em 24/11/2026: (48) 8869-0917.
-  // CONFIRMAR com a cliente se é esse mesmo ou se falta o 9 na frente (celular: 48 9 8869-0917).
-  whatsapp: '554888690917',
+  // Número informado pelo desenvolvedor: (48) 98869-0917 (o 9 na frente foi confirmado em 25/11/2026).
+  whatsapp: '5548988690917',
   // Como o número aparece na tela. Ex.: '(48) 99999-8888'
-  whatsappExibicao: '(48) 8869-0917',
+  whatsappExibicao: '(48) 98869-0917',
 
   instagram: '', // ex.: 'krislei.decoracoes' (sem @) — vazio = não mostra
   cidade: '',

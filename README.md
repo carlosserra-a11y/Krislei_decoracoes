@@ -60,7 +60,7 @@ node gerar-og.mjs
 
 Nada disso foi inventado: tudo fica em `js/config.js` e a página não mostra o que estiver vazio.
 
-- [ ] **WhatsApp:** o número em uso é **(48) 8869-0917**. Confirmar se é esse mesmo ou se falta o 9 na frente (celular: `48 9 8869-0917`). Para trocar: `whatsapp` e `whatsappExibicao` em `js/config.js` e o mesmo número nos `href`/textos do `index.html` (busque por `554888690917` e `8869-0917`).
+- [x] **WhatsApp:** o número em uso é **(48) 98869-0917** (o 9 na frente foi confirmado). Para trocar: `whatsapp` e `whatsappExibicao` em `js/config.js` e o mesmo número nos `href`/textos do `index.html` (busque por `5548988690917` e `98869-0917`).
 - [ ] Nome comercial exato e grafia de "Krislei"
 - [ ] Cidade e região atendida, Instagram e horário de atendimento
 - [ ] A **pista de LED**, a **entrega**, a **montagem** e a **retirada** fazem parte do serviço? (`secoes.pistaLed` e `servicos.*`)
