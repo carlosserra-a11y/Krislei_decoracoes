@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://carlosserra-a11y.github.io/Krislei_decoracoes/sitemap.xml
+Sitemap: https://krislei-decoracoes.vercel.app/sitemap.xml

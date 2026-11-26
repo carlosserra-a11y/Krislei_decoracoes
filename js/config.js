@@ -15,7 +15,7 @@ export const CONFIG = Object.freeze({
   regiaoAtendida: '',
   horarioAtendimento: '',
   // URL pública do site (usada no SEO). Padrão: GitHub Pages do repositório.
-  siteUrl: 'https://carlosserra-a11y.github.io/Krislei_decoracoes/',
+  siteUrl: 'https://krislei-decoracoes.vercel.app/',
 
   // null = "a confirmar" (a página usa texto neutro). true/false quando a cliente confirmar.
   servicos: Object.freeze({ entrega: null, montagem: null, retirada: null }),

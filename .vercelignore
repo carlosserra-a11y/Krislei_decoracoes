@@ -1,0 +1,5 @@
+# Arquivos de desenvolvimento: ficam no repositório, fora do site publicado.
+tools
+tests
+*.md
+.gitignore

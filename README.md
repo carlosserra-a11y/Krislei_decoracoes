@@ -77,7 +77,10 @@ Nada disso foi inventado: tudo fica em `js/config.js` e a página não mostra o 
 - [ ] Respostas das perguntas frequentes
 - [ ] Logotipo oficial (a página usa um logotipo tipográfico provisório)
 
-## Publicação (GitHub Pages)
+## Publicação (Vercel)
 
-**Settings → Pages → Deploy from branch → `main` / (root)**.
-O site fica em `https://carlosserra-a11y.github.io/Krislei_decoracoes/`. Todos os caminhos são relativos. Ao mudar CSS, aumente o `?v=` dos links no `index.html` para furar o cache.
+Site no ar: **https://krislei-decoracoes.vercel.app/** (projeto `krislei-decoracoes`).
+
+O projeto **ainda não está ligado ao GitHub**, então um `push` não publica sozinho. Para publicar automaticamente, dê ao app da Vercel acesso a este repositório ([configurações da instalação no GitHub](https://github.com/settings/installations)) e conecte-o em **Vercel → projeto → Settings → Git**.
+
+O `.vercelignore` deixa `tools/`, `tests/` e os arquivos `.md` fora do site. Todos os caminhos são relativos. Ao mudar CSS, aumente o `?v=` dos links no `index.html` para furar o cache.
